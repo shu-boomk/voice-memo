@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Memowave</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f5f5f7;
+  --surface: #ffffff;
+  --surface2: #f0f0f2;
+  --border: #e0e0e5;
+  --accent: #ff3b30;
+  --accent-light: rgba(255,59,48,0.1);
+  --text: #1c1c1e;
+  --text2: #6e6e73;
+  --text3: #aeaeb2;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bot: env(safe-area-inset-bottom, 0px);
+  --tag-h: 36px;
+  --nav-h: 56px;
+  --player-h: 80px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: 'Outfit', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── NAV ── */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+  background: rgba(245,245,247,0.88);
+  backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+  border-bottom: 0.5px solid var(--border);
+  padding-top: var(--safe-top);
+}
+
+.nav-inner {
+  height: var(--nav-h);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 16px;
+  gap: 12px;
+}
+
+.nav-logo {
+  font-size: 20px; font-weight: 700; letter-spacing: -0.5px;
+  color: var(--text); white-space: nowrap;
+}
+
+.nav-logo span { color: var(--accent); }
+
+.nav-tabs {
+  display: flex; gap: 4px;
+  background: var(--surface2);
+  border-radius: 10px; padding: 3px;
+  flex-shrink: 0;
+}
+
+.nav-tab {
+  padding: 5px 12px;
+  border-radius: 8px; border: none;
+  background: transparent; cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px; font-weight: 500;
+  color: var(--text2);
+  transition: all 0.18s ease;
+  white-space: nowrap;
+  display: flex; align-items: center; gap: 5px;
+}
+
+.nav-tab.active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+.nav-tab svg { width: 14px; height: 14px; }
+
+.nav-search {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--surface2);
+  border-radius: 10px; padding: 7px 10px;
+  flex: 1; min-width: 0;
+}
+
+.nav-search svg { width: 14px; height: 14px; color: var(--text3); flex-shrink: 0; }
+
+.nav-search input {
+  border: none; outline: none; background: transparent;
+  font-family: 'Outfit', sans-serif; font-size: 14px; color: var(--text);
+  width: 100%;
+}
+
+.nav-search input::placeholder { color: var(--text3); }
+
+/* ── TAG BAR ── */
+.tag-bar-wrap {
+  position: fixed; z-index: 45;
+  left: 0; right: 0;
+  top: calc(var(--safe-top) + var(--nav-h));
+  background: rgba(245,245,247,0.88);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border-bottom: 0.5px solid var(--border);
+}
+
+.tag-bar {
+  display: flex; gap: 6px;
+  padding: 8px 14px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.tag-bar::-webkit-scrollbar { display: none; }
+
+.tag-chip {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 12px;
+  border-radius: 20px; border: 1.5px solid var(--border);
+  background: var(--surface); cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+  font-size: 12px; font-weight: 500; color: var(--text2);
+  white-space: nowrap; flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.tag-chip.active {
+  background: var(--accent); border-color: var(--accent);
+  color: #fff;
+}
+
+.tag-chip .dot {
+  width: 7px; height: 7px; border-radius: 50%;
+}
+
+/* ── CONTENT ── */
+.content {
+  padding-top: calc(var(--safe-top) + var(--nav-h) + var(--tag-h) + 16px + 16px);
+  padding-bottom: calc(var(--player-h) + var(--safe-bot) + 80px);
+  min-height: 100dvh;
+}
+
+/* ── VIEWS ── */
+.view { display: none; }
+.view.active { display: block; }
+
+/* ── MEMO LIST ── */
+.memo-list {
+  display: flex; flex-direction: column; gap: 0;
+  background: var(--surface);
+  margin: 0 14px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+}
+
+.empty-state {
+  padding: 52px 20px;
+  text-align: center; color: var(--text3); font-size: 14px; line-height: 1.7;
+}
+
+.empty-state .e-icon { font-size: 36px; margin-bottom: 12px; opacity: 0.5; }
+
+.memo-item {
+  display: flex; flex-direction: column;
+  padding: 13px 16px;
+  border-bottom: 0.5px solid var(--border);
+  cursor: pointer;
+  transition: background 0.12s;
+  position: relative;
+  animation: slideIn 0.22s ease;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.memo-item:last-child { border-bottom: none; }
+.memo-item:active { background: var(--surface2); }
+.memo-item.is-playing { background: rgba(255,59,48,0.04); }
+
+.memo-row1 {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 6px;
+}
+
+.memo-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: var(--accent-light);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.memo-icon svg { width: 16px; height: 16px; color: var(--accent); }
+.memo-item.is-playing .memo-icon { background: var(--accent); }
+.memo-item.is-playing .memo-icon svg { color: #fff; }
+
+.memo-body { flex: 1; overflow: hidden; }
+
+.memo-name {
+  font-size: 14px; font-weight: 600; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.memo-item.is-playing .memo-name { color: var(--accent); }
+
+.memo-meta {
+  font-size: 11px; color: var(--text3); margin-top: 1px;
+  display: flex; gap: 6px;
+}
+
+.memo-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 8px; }
+
+.mini-tag {
+  font-size: 10px; font-weight: 600;
+  padding: 2px 7px; border-radius: 6px;
+  border: 1px solid;
+}
+
+/* ── PROGRESS MINI ── */
+.mini-progress { display: flex; align-items: center; gap: 6px; }
+
+.mini-track {
+  flex: 1; height: 2px; background: var(--border);
+  border-radius: 1px; overflow: hidden;
+}
+
+.mini-fill {
+  height: 100%; background: var(--accent);
+  border-radius: 1px; width: 0%;
+  transition: width 0.1s linear;
+}
+
+.mini-time { font-size: 10px; color: var(--text3); font-variant-numeric: tabular-nums; }
+
+/* ── PLAYLIST VIEW ── */
+.playlist-grid {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 0 14px;
+}
+
+.pl-card {
+  background: var(--surface);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  cursor: pointer;
+  transition: transform 0.15s;
+  animation: slideIn 0.22s ease;
+}
+
+.pl-card:active { transform: scale(0.98); }
+
+.pl-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 0.5px solid var(--border);
+}
+
+.pl-cover {
+  width: 44px; height: 44px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; flex-shrink: 0;
+}
+
+.pl-info { flex: 1; overflow: hidden; }
+.pl-name { font-size: 15px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pl-count { font-size: 12px; color: var(--text3); margin-top: 1px; }
+
+.pl-play-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--accent); border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.pl-play-btn svg { width: 14px; height: 14px; fill: white; }
+
+.pl-tracks {
+  display: none;
+}
+
+.pl-card.expanded .pl-tracks { display: block; }
+
+.pl-track {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px;
+  border-top: 0.5px solid var(--border);
+  font-size: 13px; color: var(--text2);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.pl-track:active { background: var(--surface2); }
+.pl-track.is-playing { color: var(--accent); font-weight: 600; }
+
+.pl-track-num { width: 18px; text-align: center; font-size: 11px; color: var(--text3); }
+.pl-track.is-playing .pl-track-num { color: var(--accent); }
+.pl-track-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pl-track-dur { font-size: 11px; color: var(--text3); font-variant-numeric: tabular-nums; }
+
+/* ── GLOBAL PLAYER ── */
+.player {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 60;
+  background: rgba(245,245,247,0.92);
+  backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+  border-top: 0.5px solid var(--border);
+  padding-bottom: var(--safe-bot);
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+.player.visible { transform: translateY(0); }
+
+.player-inner {
+  height: var(--player-h);
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 16px;
+}
+
+.player-thumb {
+  width: 44px; height: 44px; border-radius: 10px;
+  background: var(--accent); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.player-thumb svg { width: 20px; height: 20px; fill: white; }
+
+.player-info { flex: 1; overflow: hidden; }
+
+.player-name {
+  font-size: 14px; font-weight: 600; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.player-progress { margin-top: 4px; display: flex; align-items: center; gap: 6px; }
+
+.player-track {
+  flex: 1; height: 2px; background: var(--border);
+  border-radius: 1px; cursor: pointer;
+}
+
+.player-fill {
+  height: 100%; background: var(--accent);
+  border-radius: 1px; width: 0%;
+  transition: width 0.1s linear;
+}
+
+.player-time { font-size: 10px; color: var(--text3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.player-controls { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+.ctrl-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: none; background: transparent; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; color: var(--text);
+  transition: background 0.12s;
+  -webkit-appearance: none;
+}
+
+.ctrl-btn:active { background: var(--surface2); }
+.ctrl-btn svg { width: 18px; height: 18px; }
+
+.ctrl-btn.main {
+  background: var(--accent); color: white; width: 40px; height: 40px;
+}
+.ctrl-btn.main:active { opacity: 0.8; background: var(--accent); }
+.ctrl-btn.main svg { width: 16px; height: 16px; fill: white; }
+
+/* ── FAB ── */
+.fab {
+  position: fixed; bottom: calc(var(--player-h) + var(--safe-bot) + 16px); right: 16px;
+  z-index: 55;
+  width: 56px; height: 56px; border-radius: 50%;
+  background: var(--accent);
+  border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 20px rgba(255,59,48,0.4);
+  transition: transform 0.2s ease, box-shadow 0.2s;
+  -webkit-appearance: none;
+}
+
+.fab:active { transform: scale(0.93); }
+.fab.open { transform: rotate(45deg); }
+.fab svg { width: 24px; height: 24px; fill: white; transition: transform 0.2s; }
+
+/* ── UPLOAD SHEET ── */
+.sheet-overlay {
+  position: fixed; inset: 0; z-index: 70;
+  background: rgba(0,0,0,0.4);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.25s;
+}
+
+.sheet-overlay.visible { opacity: 1; pointer-events: all; }
+
+.sheet {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 75;
+  background: var(--surface);
+  border-radius: 24px 24px 0 0;
+  padding-bottom: calc(var(--safe-bot) + 16px);
+  transform: translateY(100%);
+  transition: transform 0.32s cubic-bezier(0.34, 1.15, 0.64, 1);
+}
+
+.sheet.visible { transform: translateY(0); }
+
+.sheet-handle {
+  width: 36px; height: 4px; border-radius: 2px;
+  background: var(--border); margin: 10px auto 0;
+}
+
+.sheet-title {
+  font-size: 16px; font-weight: 700; color: var(--text);
+  padding: 16px 20px 0;
+}
+
+.upload-zone {
+  margin: 14px 16px;
+  border: 2px dashed var(--border);
+  border-radius: 16px;
+  padding: 28px 20px;
+  text-align: center; cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+
+.upload-zone.drag { border-color: var(--accent); background: var(--accent-light); }
+.upload-zone:active { background: var(--surface2); }
+
+.upload-zone .uz-icon {
+  width: 52px; height: 52px; border-radius: 14px;
+  background: var(--accent-light);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 4px;
+}
+
+.upload-zone .uz-icon svg { width: 26px; height: 26px; color: var(--accent); }
+.upload-zone h3 { font-size: 15px; font-weight: 600; color: var(--text); }
+.upload-zone p { font-size: 12px; color: var(--text3); line-height: 1.5; }
+
+#fileInput { display: none; }
+
+/* ── TAG MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 80;
+  background: rgba(0,0,0,0.45);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.2s;
+  display: flex; align-items: flex-end;
+}
+
+.modal-overlay.visible { opacity: 1; pointer-events: all; }
+
+.tag-modal {
+  background: var(--surface);
+  border-radius: 24px 24px 0 0;
+  width: 100%;
+  padding: 0 0 calc(var(--safe-bot) + 16px);
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.34, 1.15, 0.64, 1);
+}
+
+.modal-overlay.visible .tag-modal { transform: translateY(0); }
+
+.tag-modal-handle { width: 36px; height: 4px; border-radius: 2px; background: var(--border); margin: 10px auto; }
+.tag-modal-title { font-size: 16px; font-weight: 700; padding: 4px 20px 12px; color: var(--text); }
+
+.tag-select-grid {
+  display: flex; flex-wrap: wrap; gap: 8px; padding: 0 16px 16px;
+}
+
+.tag-sel-chip {
+  padding: 7px 14px; border-radius: 20px;
+  border: 1.5px solid var(--border);
+  background: var(--surface2); cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px; font-weight: 500; color: var(--text2);
+  transition: all 0.15s; display: flex; align-items: center; gap: 6px;
+}
+
+.tag-sel-chip.selected { border-color: currentColor; }
+
+.tag-sel-chip .chip-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+.tag-new-row {
+  display: flex; gap: 8px; padding: 0 16px 8px;
+}
+
+.tag-new-input {
+  flex: 1; border: 1.5px solid var(--border); border-radius: 12px;
+  padding: 10px 14px; font-family: 'Outfit', sans-serif;
+  font-size: 14px; color: var(--text); background: var(--surface2);
+  outline: none;
+}
+
+.tag-new-input:focus { border-color: var(--accent); }
+
+.tag-new-btn {
+  padding: 10px 16px; border-radius: 12px;
+  background: var(--accent); border: none; cursor: pointer;
+  font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 600; color: #fff;
+}
+
+.modal-done-btn {
+  margin: 8px 16px 0;
+  width: calc(100% - 32px); padding: 14px;
+  border-radius: 14px; background: var(--accent); border: none; cursor: pointer;
+  font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 700; color: #fff;
+}
+
+/* ── NEW PLAYLIST MODAL ── */
+.pl-modal { padding-bottom: 20px; }
+.pl-modal-input {
+  margin: 8px 16px 12px;
+  border: 1.5px solid var(--border); border-radius: 12px;
+  padding: 12px 14px; font-family: 'Outfit', sans-serif;
+  font-size: 15px; color: var(--text); background: var(--surface2);
+  outline: none; width: calc(100% - 32px);
+}
+.pl-modal-input:focus { border-color: var(--accent); }
+.pl-emoji-row { display: flex; gap: 8px; padding: 0 16px 12px; flex-wrap: wrap; }
+.pl-emoji-opt {
+  width: 40px; height: 40px; border-radius: 10px; border: 1.5px solid var(--border);
+  background: var(--surface2); cursor: pointer; font-size: 20px;
+  display: flex; align-items: center; justify-content: center; transition: all 0.12s;
+}
+.pl-emoji-opt.sel { border-color: var(--accent); background: var(--accent-light); }
+.pl-modal-label { font-size: 12px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; padding: 0 16px 8px; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: calc(var(--player-h) + var(--safe-bot) + 80px); left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: rgba(28,28,30,0.85); color: #fff;
+  font-size: 13px; font-weight: 500;
+  padding: 9px 18px; border-radius: 20px;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+  white-space: nowrap; z-index: 100;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── SECTION LABEL ── */
+.section-label {
+  font-size: 12px; font-weight: 600; color: var(--text3);
+  text-transform: uppercase; letter-spacing: 0.6px;
+  padding: 0 16px 8px;
+}
+
+/* ── CONTEXT MENU ── */
+.ctx-overlay {
+  position: fixed; inset: 0; z-index: 65;
+  opacity: 0; pointer-events: none;
+}
+.ctx-overlay.visible { opacity: 1; pointer-events: all; }
+.ctx-menu {
+  position: fixed; z-index: 66;
+  background: rgba(250,250,252,0.95);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border: 0.5px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+  min-width: 180px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+  animation: popIn 0.15s ease;
+}
+@keyframes popIn { from { opacity:0; transform: scale(0.92); } to { opacity:1; transform:scale(1); } }
+.ctx-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 13px 16px; cursor: pointer; font-size: 14px; font-weight: 500;
+  border-bottom: 0.5px solid var(--border); color: var(--text);
+  transition: background 0.1s;
+}
+.ctx-item:last-child { border-bottom: none; }
+.ctx-item:active { background: var(--surface2); }
+.ctx-item.danger { color: var(--accent); }
+.ctx-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+/* ── RENAME INPUT ── */
+.rename-wrap { display: none; align-items: center; gap: 8px; padding: 12px 16px; border-top: 0.5px solid var(--border); }
+.rename-wrap.visible { display: flex; }
+.rename-input { flex: 1; border: 1.5px solid var(--accent); border-radius: 10px; padding: 8px 12px; font-family: 'Outfit', sans-serif; font-size: 14px; color: var(--text); background: var(--surface2); outline: none; }
+.rename-ok { padding: 8px 14px; border-radius: 10px; background: var(--accent); border: none; cursor: pointer; font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 600; color: #fff; }
+
+/* ── ADD TO PLAYLIST SHEET ── */
+.pl-pick-item { display: flex; align-items: center; gap: 12px; padding: 14px 20px; border-bottom: 0.5px solid var(--border); cursor: pointer; transition: background 0.1s; }
+.pl-pick-item:last-child { border-bottom: none; }
+.pl-pick-item:active { background: var(--surface2); }
+.pl-pick-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; background: var(--surface2); }
+.pl-pick-name { font-size: 14px; font-weight: 600; color: var(--text); }
+.pl-pick-count { font-size: 12px; color: var(--text3); }
+.pl-new-opt { display: flex; align-items: center; gap: 12px; padding: 14px 20px; cursor: pointer; color: var(--accent); font-size: 14px; font-weight: 600; border-top: 0.5px solid var(--border); }
+.pl-new-opt svg { width: 18px; height: 18px; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<div class="nav">
+  <div class="nav-inner">
+    <div class="nav-logo">Memo<span>wave</span></div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="switchView('list')" id="tab-list">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor"/><circle cx="3" cy="12" r="1" fill="currentColor"/><circle cx="3" cy="18" r="1" fill="currentColor"/></svg>
+        メモ
+      </button>
+      <button class="nav-tab" onclick="switchView('playlist')" id="tab-playlist">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-1.5-.454M9 6l3-3 3 3M3 16h18"/><path d="M12 3v13"/></svg>
+        リスト
+      </button>
+    </div>
+    <button class="nav-tab" style="background:var(--surface2);border-radius:10px;" onclick="toggleSearch()" id="searchBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="16" height="16"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    </button>
+  </div>
+  <div id="searchBar" style="display:none; padding: 0 14px 10px;">
+    <div class="nav-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="searchInput" type="search" placeholder="検索..." oninput="onSearch()">
+    </div>
+  </div>
+</div>
+
+<!-- TAG BAR -->
+<div class="tag-bar-wrap">
+  <div class="tag-bar" id="tagBar">
+    <div class="tag-chip active" data-tag="all" onclick="filterTag('all')">すべて</div>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+  <!-- List View -->
+  <div class="view active" id="view-list">
+    <div class="section-label" id="listLabel" style="display:none">保存済み</div>
+    <div class="memo-list" id="memoList">
+      <div class="empty-state"><div class="e-icon">🎵</div>右下の＋ボタンから<br>音声ファイルを追加</div>
+    </div>
+  </div>
+
+  <!-- Playlist View -->
+  <div class="view" id="view-playlist">
+    <div class="section-label">再生リスト</div>
+    <div class="playlist-grid" id="playlistGrid">
+      <div class="empty-state" style="background:var(--surface);border-radius:16px;">
+        <div class="e-icon">🎵</div>再生リストがありません<br><small style="font-size:11px">メモを長押し→リストに追加</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PLAYER -->
+<div class="player" id="player">
+  <div class="player-inner">
+    <div class="player-thumb">
+      <svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+    </div>
+    <div class="player-info">
+      <div class="player-name" id="playerName">—</div>
+      <div class="player-progress">
+        <div class="player-track" onclick="playerSeek(event)" id="playerTrack">
+          <div class="player-fill" id="playerFill"></div>
+        </div>
+        <div class="player-time" id="playerTime">0:00</div>
+      </div>
+    </div>
+    <div class="player-controls">
+      <button class="ctrl-btn" onclick="playPrev()" title="前へ">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+      </button>
+      <button class="ctrl-btn main" id="playerPlayBtn" onclick="togglePlay()">
+        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+      <button class="ctrl-btn" onclick="playNext()" title="次へ">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="4" x2="19" y2="20"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- FAB -->
+<button class="fab" id="fab" onclick="toggleSheet()">
+  <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+</button>
+
+<!-- UPLOAD SHEET -->
+<div class="sheet-overlay" id="sheetOverlay" onclick="closeSheet()"></div>
+<div class="sheet" id="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title">音声ファイルを追加</div>
+  <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+    <div class="uz-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    </div>
+    <h3>ファイルを選択</h3>
+    <p>MP3 / M4A / WAV / AAC など<br>複数まとめて選択できます</p>
+  </div>
+  <input id="fileInput" type="file" accept="audio/*" multiple>
+</div>
+
+<!-- TAG MODAL -->
+<div class="modal-overlay" id="tagModalOverlay" onclick="closeTagModal()">
+  <div class="tag-modal" onclick="e=>e.stopPropagation()">
+    <div class="tag-modal-handle"></div>
+    <div class="tag-modal-title" id="tagModalTitle">タグを編集</div>
+    <div class="tag-select-grid" id="tagSelectGrid"></div>
+    <div class="pl-modal-label">新しいタグ</div>
+    <div class="tag-new-row">
+      <input class="tag-new-input" id="tagNewInput" type="text" placeholder="タグ名を入力..." maxlength="20">
+      <button class="tag-new-btn" onclick="addNewTag()">追加</button>
+    </div>
+    <button class="modal-done-btn" onclick="closeTagModal()">完了</button>
+  </div>
+</div>
+
+<!-- PLAYLIST MODAL -->
+<div class="modal-overlay" id="plModalOverlay" onclick="closePlModal()">
+  <div class="tag-modal pl-modal" onclick="e=>e.stopPropagation()">
+    <div class="tag-modal-handle"></div>
+    <div class="tag-modal-title">新しい再生リスト</div>
+    <div class="pl-modal-label">名前</div>
+    <input class="pl-modal-input" id="plNameInput" type="text" placeholder="リスト名..." maxlength="30">
+    <div class="pl-modal-label">アイコン</div>
+    <div class="pl-emoji-row" id="plEmojiRow"></div>
+    <button class="modal-done-btn" onclick="createPlaylist()">作成</button>
+  </div>
+</div>
+
+<!-- ADD TO PLAYLIST SHEET -->
+<div class="modal-overlay" id="plPickOverlay" onclick="closePlPick()">
+  <div class="tag-modal" onclick="e=>e.stopPropagation()">
+    <div class="tag-modal-handle"></div>
+    <div class="tag-modal-title">再生リストに追加</div>
+    <div id="plPickList"></div>
+    <div class="pl-new-opt" onclick="openPlModal()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      新しい再生リストを作成
+    </div>
+  </div>
+</div>
+
+<!-- CONTEXT MENU -->
+<div class="ctx-overlay" id="ctxOverlay" onclick="closeCtx()"></div>
+<div class="ctx-menu" id="ctxMenu" style="display:none"></div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════
+// DB
+// ════════════════════════════════════════
+const DB_NAME = 'memowave_db', DB_VER = 2;
+let db = null;
+
+function openDB() {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open(DB_NAME, DB_VER);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains('memos')) d.createObjectStore('memos', { keyPath: 'id' });
+      if (!d.objectStoreNames.contains('playlists')) d.createObjectStore('playlists', { keyPath: 'id' });
+      if (!d.objectStoreNames.contains('tags')) d.createObjectStore('tags', { keyPath: 'name' });
+    };
+    req.onsuccess = e => { db = e.target.result; res(); };
+    req.onerror = () => rej(req.error);
+  });
+}
+
+function dbTx(store, mode, fn) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store, mode);
+    const s = tx.objectStore(store);
+    const req = fn(s);
+    if (req) { req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error); }
+    else { tx.oncomplete = res; tx.onerror = () => rej(tx.error); }
+  });
+}
+
+const dbGetAll = store => dbTx(store, 'readonly', s => s.getAll());
+const dbPut = (store, obj) => dbTx(store, 'readwrite', s => { s.put(obj); });
+const dbDel = (store, id) => dbTx(store, 'readwrite', s => { s.delete(id); });
+
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+let memos = [];
+let playlists = [];
+let allTags = [];
+let activeTag = 'all';
+let searchQ = '';
+let currentAudio = null;
+let currentId = null;
+let currentQueue = [];
+let currentQueueIdx = -1;
+let tagModalMemoId = null;
+let plPickMemoId = null;
+let selectedEmoji = '🎵';
+
+const EMOJIS = ['🎵','🎶','📻','🎤','🎙️','🔔','📝','💡','⭐','🔥','💜','🎸'];
+
+const TAG_PALETTE = [
+  { color: '#ff3b30', bg: 'rgba(255,59,48,0.1)' },
+  { color: '#ff9500', bg: 'rgba(255,149,0,0.1)' },
+  { color: '#34c759', bg: 'rgba(52,199,89,0.1)' },
+  { color: '#007aff', bg: 'rgba(0,122,255,0.1)' },
+  { color: '#af52de', bg: 'rgba(175,82,222,0.1)' },
+  { color: '#5ac8fa', bg: 'rgba(90,200,250,0.1)' },
+];
+
+function tagStyle(tagName) {
+  const idx = allTags.findIndex(t => t.name === tagName);
+  return TAG_PALETTE[idx % TAG_PALETTE.length] || TAG_PALETTE[0];
+}
+
+// ════════════════════════════════════════
+// UTILS
+// ════════════════════════════════════════
+function fmt(s) {
+  if (!s || isNaN(s) || !isFinite(s)) return '--:--';
+  const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+  return m + ':' + String(sec).padStart(2, '0');
+}
+function fmtSize(b) {
+  return b < 1048576 ? (b/1024).toFixed(0) + ' KB' : (b/1048576).toFixed(1) + ' MB';
+}
+function dateStr(ts) {
+  return new Date(ts).toLocaleDateString('ja-JP', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+function blobUrl(memo) {
+  if (!memo._url) memo._url = URL.createObjectURL(memo.blob);
+  return memo._url;
+}
+
+// ════════════════════════════════════════
+// VIEWS
+// ════════════════════════════════════════
+function switchView(v) {
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('view-' + v).classList.add('active');
+  document.getElementById('tab-' + v).classList.add('active');
+}
+
+let searchOpen = false;
+function toggleSearch() {
+  searchOpen = !searchOpen;
+  document.getElementById('searchBar').style.display = searchOpen ? 'block' : 'none';
+  if (searchOpen) document.getElementById('searchInput').focus();
+  else { document.getElementById('searchInput').value = ''; searchQ = ''; renderList(); }
+}
+function onSearch() { searchQ = document.getElementById('searchInput').value.toLowerCase(); renderList(); }
+
+// ════════════════════════════════════════
+// FILES
+// ════════════════════════════════════════
+document.getElementById('fileInput').addEventListener('change', e => { handleFiles([...e.target.files]); e.target.value = ''; });
+
+const uz = document.getElementById('uploadZone');
+uz.addEventListener('dragover', e => { e.preventDefault(); uz.classList.add('drag'); });
+uz.addEventListener('dragleave', () => uz.classList.remove('drag'));
+uz.addEventListener('drop', e => {
+  e.preventDefault(); uz.classList.remove('drag');
+  handleFiles([...e.dataTransfer.files].filter(f => f.type.startsWith('audio/')));
+});
+
+async function handleFiles(files) {
+  const valid = files.filter(f => f.type.startsWith('audio/'));
+  if (!valid.length) return;
+  for (const file of valid) {
+    const memo = { id: Date.now() + Math.random(), name: file.name.replace(/\.[^.]+$/, ''), date: Date.now(), size: file.size, type: file.type, blob: file, tags: [] };
+    await dbPut('memos', memo);
+    memos.unshift(memo);
+  }
+  closeSheet();
+  renderAll();
+  showToast(`${valid.length}件を追加しました`);
+}
+
+// ════════════════════════════════════════
+// PLAYBACK
+// ════════════════════════════════════════
+function buildQueue() {
+  currentQueue = filteredMemos();
+}
+
+function playMemo(id, queue) {
+  if (queue) currentQueue = queue;
+  else if (!currentQueue.length || !currentQueue.find(m => m.id === id)) buildQueue();
+  currentQueueIdx = currentQueue.findIndex(m => m.id === id);
+
+  if (currentId === id && currentAudio) {
+    togglePlay(); return;
+  }
+  stopCurrent();
+  const memo = memos.find(m => m.id === id);
+  if (!memo) return;
+
+  currentAudio = new Audio(blobUrl(memo));
+  currentId = id;
+
+  currentAudio.ontimeupdate = () => {
+    const pct = currentAudio.duration ? currentAudio.currentTime / currentAudio.duration * 100 : 0;
+    const fill = document.getElementById('f' + id);
+    if (fill) fill.style.width = pct + '%';
+    document.getElementById('playerFill').style.width = pct + '%';
+    document.getElementById('playerTime').textContent = fmt(currentAudio.currentTime) + ' / ' + fmt(currentAudio.duration);
+    const tEl = document.getElementById('t' + id);
+    if (tEl) tEl.textContent = fmt(currentAudio.currentTime) + ' / ' + fmt(currentAudio.duration);
+  };
+
+  currentAudio.onended = () => { playNext(); };
+
+  currentAudio.play().catch(() => {});
+  setPlayerUI(memo);
+  updateItemUI();
+}
+
+function stopCurrent() {
+  if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+  if (currentId) { setItemPlaying(currentId, false); }
+  currentId = null;
+}
+
+function togglePlay() {
+  if (!currentAudio) return;
+  if (currentAudio.paused) { currentAudio.play(); setPlayBtnIcon(false); }
+  else { currentAudio.pause(); setPlayBtnIcon(true); }
+}
+
+function playNext() {
+  if (!currentQueue.length) return;
+  currentQueueIdx = (currentQueueIdx + 1) % currentQueue.length;
+  playMemo(currentQueue[currentQueueIdx].id);
+}
+
+function playPrev() {
+  if (!currentAudio || currentAudio.currentTime > 3) { if (currentAudio) { currentAudio.currentTime = 0; } return; }
+  if (!currentQueue.length) return;
+  currentQueueIdx = (currentQueueIdx - 1 + currentQueue.length) % currentQueue.length;
+  playMemo(currentQueue[currentQueueIdx].id);
+}
+
+function playerSeek(e) {
+  if (!currentAudio) return;
+  const rect = e.currentTarget.getBoundingClientRect();
+  currentAudio.currentTime = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * (currentAudio.duration || 0);
+}
+
+function setPlayerUI(memo) {
+  document.getElementById('playerName').textContent = memo.name;
+  document.getElementById('player').classList.add('visible');
+  setPlayBtnIcon(false);
+  setItemPlaying(memo.id, true);
+}
+
+function setPlayBtnIcon(paused) {
+  document.getElementById('playerPlayBtn').innerHTML = paused
+    ? '<svg viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>';
+}
+
+function setItemPlaying(id, on) {
+  document.querySelectorAll('.memo-item').forEach(el => el.classList.remove('is-playing'));
+  document.querySelectorAll('.pl-track').forEach(el => el.classList.remove('is-playing'));
+  if (on && id) {
+    document.getElementById('item' + id)?.classList.add('is-playing');
+    document.querySelectorAll(`.pl-track[data-id="${id}"]`).forEach(el => el.classList.add('is-playing'));
+  }
+}
+
+function updateItemUI() { setItemPlaying(currentId, true); }
+
+// ════════════════════════════════════════
+// TAGS
+// ════════════════════════════════════════
+function filterTag(tag) {
+  activeTag = tag;
+  document.querySelectorAll('.tag-chip').forEach(el => el.classList.toggle('active', el.dataset.tag === tag));
+  renderList();
+}
+
+function renderTagBar() {
+  const bar = document.getElementById('tagBar');
+  bar.innerHTML = `<div class="tag-chip ${activeTag==='all'?'active':''}" data-tag="all" onclick="filterTag('all')">すべて</div>`;
+  allTags.forEach(t => {
+    const st = tagStyle(t.name);
+    bar.innerHTML += `<div class="tag-chip ${activeTag===t.name?'active':''}" data-tag="${esc(t.name)}" onclick="filterTag('${esc(t.name)}')" style="${activeTag===t.name?`background:${st.color};border-color:${st.color};color:#fff`:`border-color:${st.color};color:${st.color}`}"><span class="dot" style="background:${st.color}"></span>${esc(t.name)}</div>`;
+  });
+}
+
+function openTagModal(memoId) {
+  tagModalMemoId = memoId;
+  const memo = memos.find(m => m.id === memoId);
+  document.getElementById('tagModalTitle').textContent = memo ? `「${memo.name}」のタグ` : 'タグを編集';
+  renderTagSelectGrid(memo?.tags || []);
+  document.getElementById('tagModalOverlay').classList.add('visible');
+}
+
+function closeTagModal() {
+  document.getElementById('tagModalOverlay').classList.remove('visible');
+  tagModalMemoId = null;
+}
+
+function renderTagSelectGrid(selected) {
+  const grid = document.getElementById('tagSelectGrid');
+  grid.innerHTML = allTags.map(t => {
+    const st = tagStyle(t.name);
+    const sel = selected.includes(t.name);
+    return `<div class="tag-sel-chip ${sel?'selected':''}" style="color:${st.color};${sel?`background:${st.bg};border-color:${st.color}`:'border-color:var(--border)'}" onclick="toggleTagOnMemo('${esc(t.name)}')">
+      <span class="chip-dot" style="background:${st.color}"></span>${esc(t.name)}
+    </div>`;
+  }).join('');
+}
+
+async function toggleTagOnMemo(tagName) {
+  if (!tagModalMemoId) return;
+  const memo = memos.find(m => m.id === tagModalMemoId);
+  if (!memo) return;
+  if (memo.tags.includes(tagName)) memo.tags = memo.tags.filter(t => t !== tagName);
+  else memo.tags.push(tagName);
+  await dbPut('memos', memo);
+  renderTagSelectGrid(memo.tags);
+  renderAll();
+}
+
+async function addNewTag() {
+  const inp = document.getElementById('tagNewInput');
+  const name = inp.value.trim();
+  if (!name || allTags.find(t => t.name === name)) { inp.value = ''; return; }
+  const tag = { name };
+  allTags.push(tag);
+  await dbPut('tags', tag);
+  inp.value = '';
+  renderTagBar();
+  if (tagModalMemoId) {
+    const memo = memos.find(m => m.id === tagModalMemoId);
+    renderTagSelectGrid(memo?.tags || []);
+  }
+}
+
+// ════════════════════════════════════════
+// PLAYLISTS
+// ════════════════════════════════════════
+function openPlModal() {
+  closePlPick();
+  const row = document.getElementById('plEmojiRow');
+  row.innerHTML = EMOJIS.map(e => `<div class="pl-emoji-opt ${e===selectedEmoji?'sel':''}" onclick="selectEmoji('${e}')">${e}</div>`).join('');
+  document.getElementById('plNameInput').value = '';
+  document.getElementById('plModalOverlay').classList.add('visible');
+}
+
+function closePlModal() { document.getElementById('plModalOverlay').classList.remove('visible'); }
+
+function selectEmoji(e) {
+  selectedEmoji = e;
+  document.querySelectorAll('.pl-emoji-opt').forEach(el => el.classList.toggle('sel', el.textContent === e));
+}
+
+async function createPlaylist() {
+  const name = document.getElementById('plNameInput').value.trim() || '新しいリスト';
+  const pl = { id: Date.now(), name, emoji: selectedEmoji, memoIds: [] };
+  playlists.push(pl);
+  await dbPut('playlists', pl);
+  closePlModal();
+  renderPlaylists();
+  showToast(`「${name}」を作成しました`);
+  if (plPickMemoId) openPlPick(plPickMemoId);
+}
+
+function openPlPick(memoId) {
+  plPickMemoId = memoId;
+  const list = document.getElementById('plPickList');
+  list.innerHTML = playlists.map(pl => `
+    <div class="pl-pick-item" onclick="addToPlaylist(${pl.id})">
+      <div class="pl-pick-icon">${pl.emoji}</div>
+      <div>
+        <div class="pl-pick-name">${esc(pl.name)}</div>
+        <div class="pl-pick-count">${pl.memoIds.length}件</div>
+      </div>
+    </div>
+  `).join('') || '<div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">再生リストがありません</div>';
+  document.getElementById('plPickOverlay').classList.add('visible');
+}
+
+function closePlPick() { document.getElementById('plPickOverlay').classList.remove('visible'); }
+
+async function addToPlaylist(plId) {
+  const pl = playlists.find(p => p.id === plId);
+  if (!pl || !plPickMemoId) return;
+  const memo = memos.find(m => m.id === plPickMemoId);
+  if (!pl.memoIds.includes(plPickMemoId)) pl.memoIds.push(plPickMemoId);
+  await dbPut('playlists', pl);
+  closePlPick();
+  renderPlaylists();
+  showToast(`「${pl.name}」に追加しました`);
+}
+
+async function removeFromPlaylist(plId, memoId) {
+  const pl = playlists.find(p => p.id === plId);
+  if (!pl) return;
+  pl.memoIds = pl.memoIds.filter(id => id !== memoId);
+  await dbPut('playlists', pl);
+  renderPlaylists();
+}
+
+// ════════════════════════════════════════
+// CONTEXT MENU
+// ════════════════════════════════════════
+let ctxMemoId = null;
+
+function openCtx(memoId, e) {
+  e.preventDefault(); e.stopPropagation();
+  ctxMemoId = memoId;
+  const menu = document.getElementById('ctxMenu');
+  menu.style.display = 'block';
+  const x = Math.min(e.clientX, window.innerWidth - 200);
+  const y = Math.min(e.clientY, window.innerHeight - 180);
+  menu.style.left = x + 'px'; menu.style.top = y + 'px';
+  menu.innerHTML = `
+    <div class="ctx-item" onclick="startRename(${memoId})">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>名前を変更
+    </div>
+    <div class="ctx-item" onclick="openTagModal(${memoId})">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>タグを編集
+    </div>
+    <div class="ctx-item" onclick="openPlPick(${memoId})">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>再生リストに追加
+    </div>
+    <div class="ctx-item" onclick="downloadMemo(${memoId})">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>ダウンロード
+    </div>
+    <div class="ctx-item danger" onclick="deleteMemo(${memoId})">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6m4-6v6"/></svg>削除
+    </div>
+  `;
+  document.getElementById('ctxOverlay').classList.add('visible');
+  closeSheet();
+}
+
+function closeCtx() {
+  document.getElementById('ctxMenu').style.display = 'none';
+  document.getElementById('ctxOverlay').classList.remove('visible');
+  ctxMemoId = null;
+}
+
+// ════════════════════════════════════════
+// RENAME
+// ════════════════════════════════════════
+function startRename(id) {
+  closeCtx();
+  const memo = memos.find(m => m.id === id);
+  if (!memo) return;
+  const item = document.getElementById('item' + id);
+  if (!item) return;
+  let rw = item.querySelector('.rename-wrap');
+  if (!rw) {
+    rw = document.createElement('div');
+    rw.className = 'rename-wrap visible';
+    rw.innerHTML = `<input class="rename-input" value="${esc(memo.name)}" maxlength="60"><button class="rename-ok" onclick="doRename(${id})">完了</button>`;
+    item.appendChild(rw);
+  } else { rw.classList.add('visible'); }
+  rw.querySelector('input').focus();
+}
+
+async function doRename(id) {
+  const item = document.getElementById('item' + id);
+  const rw = item?.querySelector('.rename-wrap');
+  if (!rw) return;
+  const val = rw.querySelector('input').value.trim();
+  if (!val) return;
+  const memo = memos.find(m => m.id === id);
+  memo.name = val;
+  await dbPut('memos', memo);
+  rw.classList.remove('visible');
+  renderAll();
+  if (currentId === id) document.getElementById('playerName').textContent = val;
+}
+
+// ════════════════════════════════════════
+// DELETE / DOWNLOAD
+// ════════════════════════════════════════
+async function deleteMemo(id) {
+  closeCtx();
+  if (currentId === id) { stopCurrent(); document.getElementById('player').classList.remove('visible'); }
+  const memo = memos.find(m => m.id === id);
+  if (memo?._url) URL.revokeObjectURL(memo._url);
+  await dbDel('memos', id);
+  memos = memos.filter(m => m.id !== id);
+  // remove from playlists
+  for (const pl of playlists) {
+    if (pl.memoIds.includes(id)) { pl.memoIds = pl.memoIds.filter(x => x !== id); await dbPut('playlists', pl); }
+  }
+  renderAll();
+  showToast('削除しました');
+}
+
+function downloadMemo(id) {
+  closeCtx();
+  const memo = memos.find(m => m.id === id);
+  if (!memo) return;
+  const url = blobUrl(memo);
+  const ext = memo.type?.split('/')[1] || 'mp3';
+  const a = document.createElement('a');
+  a.href = url; a.download = memo.name + '.' + ext;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+// ════════════════════════════════════════
+// RENDER
+// ════════════════════════════════════════
+function filteredMemos() {
+  return memos.filter(m => {
+    const tagOk = activeTag === 'all' || (m.tags || []).includes(activeTag);
+    const qOk = !searchQ || m.name.toLowerCase().includes(searchQ);
+    return tagOk && qOk;
+  });
+}
+
+function renderList() {
+  const list = document.getElementById('memoList');
+  const label = document.getElementById('listLabel');
+  const items = filteredMemos();
+  label.style.display = items.length ? 'block' : 'none';
+
+  if (!items.length) {
+    list.innerHTML = `<div class="empty-state"><div class="e-icon">🎵</div>${memos.length ? 'フィルター結果なし' : '右下の＋ボタンから<br>音声ファイルを追加'}</div>`;
+    return;
+  }
+
+  list.innerHTML = items.map(m => {
+    const tags = (m.tags || []).map(tn => {
+      const st = tagStyle(tn);
+      return `<span class="mini-tag" style="color:${st.color};background:${st.bg};border-color:${st.color}">${esc(tn)}</span>`;
+    }).join('');
+
+    return `
+      <div class="memo-item ${currentId===m.id?'is-playing':''}" id="item${m.id}"
+        onclick="playMemo(${m.id})"
+        oncontextmenu="openCtx(${m.id}, event)"
+        ontouchstart="handleTouchStart(${m.id}, event)"
+        ontouchend="handleTouchEnd(event)"
+        ontouchmove="handleTouchMove(event)">
+        <div class="memo-row1">
+          <div class="memo-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          </div>
+          <div class="memo-body">
+            <div class="memo-name">${esc(m.name)}</div>
+            <div class="memo-meta"><span>${dateStr(m.date)}</span><span>${fmtSize(m.size)}</span></div>
+          </div>
+        </div>
+        ${tags ? `<div class="memo-tags">${tags}</div>` : ''}
+        <div class="mini-progress">
+          <div class="mini-track" onclick="itemSeek(${m.id}, event); event.stopPropagation()">
+            <div class="mini-fill" id="f${m.id}" style="width:${currentId===m.id&&currentAudio?currentAudio.currentTime/currentAudio.duration*100:0}%"></div>
+          </div>
+          <span class="mini-time" id="t${m.id}">/ --:--</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function itemSeek(id, e) {
+  if (!currentAudio || currentId !== id) return;
+  const rect = e.currentTarget.getBoundingClientRect();
+  currentAudio.currentTime = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * (currentAudio.duration || 0);
+}
+
+function renderPlaylists() {
+  const grid = document.getElementById('playlistGrid');
+  if (!playlists.length) {
+    grid.innerHTML = `<div class="empty-state" style="background:var(--surface);border-radius:16px;"><div class="e-icon">🎵</div>再生リストがありません<br><small style="font-size:11px">メモを長押し→リストに追加</small></div>`;
+    return;
+  }
+
+  grid.innerHTML = playlists.map(pl => {
+    const tracks = pl.memoIds.map(id => memos.find(m => m.id === id)).filter(Boolean);
+    return `
+      <div class="pl-card" id="plcard${pl.id}">
+        <div class="pl-header" onclick="togglePl(${pl.id})">
+          <div class="pl-cover">${pl.emoji}</div>
+          <div class="pl-info">
+            <div class="pl-name">${esc(pl.name)}</div>
+            <div class="pl-count">${tracks.length}曲</div>
+          </div>
+          <button class="pl-play-btn" onclick="event.stopPropagation();playPlaylist(${pl.id})">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </button>
+        </div>
+        <div class="pl-tracks">
+          ${tracks.map((m, i) => `
+            <div class="pl-track ${currentId===m.id?'is-playing':''}" data-id="${m.id}" onclick="playMemo(${m.id}, ${JSON.stringify(tracks).split('"').join('&quot;')})">
+              <div class="pl-track-num">${i+1}</div>
+              <div class="pl-track-name">${esc(m.name)}</div>
+              <div class="pl-track-dur">--:--</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function togglePl(id) {
+  document.getElementById('plcard' + id)?.classList.toggle('expanded');
+}
+
+function playPlaylist(plId) {
+  const pl = playlists.find(p => p.id === plId);
+  if (!pl || !pl.memoIds.length) return;
+  const queue = pl.memoIds.map(id => memos.find(m => m.id === id)).filter(Boolean);
+  playMemo(queue[0].id, queue);
+}
+
+function renderAll() { renderList(); renderPlaylists(); renderTagBar(); }
+
+// ════════════════════════════════════════
+// TOUCH LONG PRESS
+// ════════════════════════════════════════
+let touchTimer = null, touchMoved = false, touchMemoId = null;
+
+function handleTouchStart(id, e) {
+  touchMoved = false; touchMemoId = id;
+  touchTimer = setTimeout(() => { if (!touchMoved) openCtx(id, { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY, preventDefault: ()=>{}, stopPropagation: ()=>{} }); }, 500);
+}
+function handleTouchMove(e) { touchMoved = true; clearTimeout(touchTimer); }
+function handleTouchEnd(e) { clearTimeout(touchTimer); }
+
+// ════════════════════════════════════════
+// SHEET
+// ════════════════════════════════════════
+function toggleSheet() {
+  const open = document.getElementById('sheet').classList.contains('visible');
+  open ? closeSheet() : openSheet();
+}
+function openSheet() {
+  document.getElementById('sheet').classList.add('visible');
+  document.getElementById('sheetOverlay').classList.add('visible');
+  document.getElementById('fab').classList.add('open');
+}
+function closeSheet() {
+  document.getElementById('sheet').classList.remove('visible');
+  document.getElementById('sheetOverlay').classList.remove('visible');
+  document.getElementById('fab').classList.remove('open');
+}
+
+// close modals on backdrop
+document.getElementById('tagModalOverlay').addEventListener('click', function(e) { if (e.target===this) closeTagModal(); });
+document.getElementById('plModalOverlay').addEventListener('click', function(e) { if (e.target===this) closePlModal(); });
+document.getElementById('plPickOverlay').addEventListener('click', function(e) { if (e.target===this) closePlPick(); });
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+(async () => {
+  await openDB();
+  memos = (await dbGetAll('memos')).sort((a,b) => b.date - a.date);
+  playlists = await dbGetAll('playlists');
+  allTags = await dbGetAll('tags');
+  renderAll();
+})();
+</script>
+</body>
+</html>
